@@ -2,8 +2,8 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 class PhotoSorterApp:
-    def __init__(self, root, imageGetter):
-        self.imageGetter = imageGetter
+    def __init__(self, root, imageHandler):
+        self.imageHandler = imageHandler
         self.root = root
         self.root.title("Photo Sorter")
         self.image_label = tk.Label(root)
@@ -21,7 +21,7 @@ class PhotoSorterApp:
         self.load_image()
 
     def load_image(self):
-        file_path = self.imageGetter.getImage()
+        file_path = self.imageHandler.getImage()
         if file_path:
             self.image = Image.open(file_path)
             self.image = self.image.resize((400, 400))
