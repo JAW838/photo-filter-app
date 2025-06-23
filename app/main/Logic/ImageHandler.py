@@ -25,7 +25,6 @@ class ImageHandler:
     def getImage(self, path: str = None):
         if path is None:
             path = self.filePath
-        print(path)
         for root, dirs, files in os.walk(path):
             dirs[:] = [d for d in dirs if d not in [saveFile, discardFile]]
             print("Directory path: %s"%root)

@@ -1,5 +1,5 @@
 from app.main.Presentation.MainWindow import PhotoSorterApp
-import tkinter as tk
+from customtkinter import *
 from app.main.Logic.ImageHandler import ImageHandler
 from app.main.Presentation.ProjType import ProjType
 from tkinter import filedialog
@@ -7,9 +7,6 @@ from tkinter import filedialog
 currType = ProjType.TEST
 
 def main():
-    root = tk.Tk()
-    root.withdraw()  # Hide the main window while selecting folder
-
     handler = ImageHandler(currType)
     if currType == ProjType.PROD:
         folder_locator = select_folder()
@@ -18,9 +15,8 @@ def main():
             return
         handler.filePath = folder_locator  # Set the selected folder as the path
 
-    root.deiconify()  # Show the main window
-    app = PhotoSorterApp(root, handler)
-    root.mainloop()
+    app = PhotoSorterApp(handler)
+    app.mainloop()
 
 def select_folder():
     return filedialog.askdirectory()
