@@ -1,5 +1,8 @@
 from app.main.Presentation.ProjType import ProjType
 import os
+from app.main.FileNames import saveFile, discardFile
+
+extensions = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff')
 
 class ImageHandler:
     '''
@@ -24,10 +27,35 @@ class ImageHandler:
             path = self.filePath
         print(path)
         for root, dirs, files in os.walk(path):
+            dirs[:] = [d for d in dirs if d not in [saveFile, discardFile]]
             print("Directory path: %s"%root)
             print("Directory Names: %s"%dirs)
             print("Files Names: %s"%files)
             for filename in files:
-                if filename.lower().endswith((".png", ".jpg", ".jpeg")):
+                if filename.lower().endswith(extensions):
                     return os.path.join(root, filename)
         return None
+    
+    def saveImage(self, imagePath: str):
+        return self.__storeImage__(imagePath, saveFile)
+    
+    def discardImage(self, imagePath: str):
+        return self.__storeImage__(imagePath, discardFile)
+
+    def deleteImage(self, imagePath: str):
+        if not os.path.exists(imagePath):
+            raise FileNotFoundError(f"Image file {imagePath} does not exist.")
+        os.remove(imagePath)
+        return True
+    
+    def __storeImage__(self, imagePath: str, folderName: str):
+        if not os.path.exists(imagePath):
+            raise FileNotFoundError(f"Image file {imagePath} does not exist.")
+        # Ensure the target directory exists
+        targetPath = os.path.join(self.filePath, folderName)
+        if not os.path.exists(targetPath):
+            os.makedirs(targetPath)
+        # Move the image to the target directory
+        newFileName = os.path.join(targetPath, os.path.basename(imagePath))
+        os.rename(imagePath, newFileName)
+        return newFileName

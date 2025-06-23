@@ -4,7 +4,7 @@ from app.main.Logic.ImageHandler import ImageHandler
 from app.main.Presentation.ProjType import ProjType
 from tkinter import filedialog
 
-currType = ProjType.PROD
+currType = ProjType.TEST
 
 def main():
     root = tk.Tk()

@@ -1,0 +1,2 @@
+saveFile = "Save"
+discardFile = "Discard"
