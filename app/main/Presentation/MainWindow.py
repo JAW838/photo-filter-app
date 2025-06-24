@@ -10,7 +10,7 @@ class PhotoSorterApp(customtkinter.CTk):
         super().__init__()
         self.title("Photo Sorter")
         self.geometry("800x600")
-        self.grid_columnconfigure((0, 1), weight=0)
+        self.grid_columnconfigure((0, 1), weight=1)
         self.grid_rowconfigure(0, weight=1)
 
         self.imageHandler = imageHandler
@@ -18,18 +18,18 @@ class PhotoSorterApp(customtkinter.CTk):
         # Create frame for buttons
         self.button_frame = CTkFrame(master=self)
         self.button_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
-        self.button_frame.grid_rowconfigure((0, 1, 2), weight=1)
+        self.button_frame.grid_rowconfigure((0, 1, 2, 3, 4), weight=1)
         self.button_frame.grid_columnconfigure(0, weight=1)
 
         # Create and place buttons
         self.keep_button = CTkButton(master=self.button_frame, text="Keep", command=self.keep_photo, fg_color="blue4", hover_color="blue", font=("Arial", FONT_SIZE), border_spacing=FONT_SIZE/4)
-        self.keep_button.grid(row=0, column=0, pady=5)
+        self.keep_button.grid(row=1, column=0, pady=5, sticky="ew")
 
         self.discard_button = CTkButton(master=self.button_frame, text="Discard", command=self.discard_photo, fg_color="blue4", hover_color="blue", font=("Arial", FONT_SIZE), border_spacing=FONT_SIZE/4)
-        self.discard_button.grid(row=1, column=0, pady=5)
+        self.discard_button.grid(row=2, column=0, pady=5, sticky="ew")
 
         self.delete_button = CTkButton(master=self.button_frame, text="Delete", command=self.delete_photo, fg_color="darkred", hover_color="red", font=("Arial", FONT_SIZE), border_spacing=FONT_SIZE/4)
-        self.delete_button.grid(row=2, column=0, pady=5)
+        self.delete_button.grid(row=3, column=0, pady=5, sticky="ew")
 
         self.toplevel_window = None
 
@@ -76,9 +76,6 @@ class PhotoSorterApp(customtkinter.CTk):
 
         # always resize from original
         self.photo = customtkinter.CTkImage(light_image=self.original_image, size=(newWidth, newHeight))
-
-        # resized_image = self.original_image.resize((int(bbox[2] - bbox[0]), int(bbox[3] - bbox[1])), Image.LANCZOS)
-        # self.photo = customtkinter.CTkImage(resized_image, size=(bbox[2] - bbox[0], bbox[3] - bbox[1]))
         self.img_label.configure(image=self.photo)
         self.img_label.image = self.photo
 
