@@ -33,14 +33,21 @@ class PhotoSorterApp(customtkinter.CTk):
 
         self.toplevel_window = None
 
-        # Create the image label ONCE
+        # Create image label
         self.img_label = customtkinter.CTkLabel(self, text="")
         self.img_label.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
         # Get an image
-        # self.bind("<Configure>", self.update_image)
-        self.open_image()
-        # self.after(100, self.update_image)
+        self.get_new_image()
+        self.resize_after_id = None
+        self.bind("<Configure>", self.on_configure)
+
+        self.after(100, self.update_image)
+
+    def on_configure(self, event):
+        if self.resize_after_id:
+            self.after_cancel(self.resize_after_id)
+        self.resize_after_id = self.after(100, self.update_image)
 
     def open_image(self):
         self.get_new_image()
@@ -49,52 +56,31 @@ class PhotoSorterApp(customtkinter.CTk):
         self.img_data = customtkinter.CTkImage(self.original_image, size=(size, size*ratio))
         self.img_label.configure(image=self.img_data)
 
-    def update_image(self, event=None):
-        bbox = self.grid_bbox(column=0, row=0)
-        img_w, img_h = self.original_image.size
+    def update_image(self):
         newWidth = 0
         newHeight = 0
-        if event == None:
-            imgAspectRatio = img_w / img_h
-            gridAspectRatio = (bbox[2] - bbox[0]) / (bbox[3] - bbox[1])
-            if gridAspectRatio > imgAspectRatio:
-                newHeight = bbox[3]
-                newWidth = newHeight * imgAspectRatio
-            else:
-                newWidth = bbox[2]
-                newHeight = newWidth / imgAspectRatio
+
+        window_width = self.winfo_width()
+        window_height = self.winfo_height()
+        window_asp = window_width/window_height
+        img_width = self.original_image.width
+        img_height = self.original_image.height
+        img_asp = img_width/img_height
+
+        if window_asp > img_asp:
+            newHeight = 0.75*window_height 
+            newWidth = newHeight*img_asp
         else:
-            newWidth = event.width
-            newHeight = event.height
+            newWidth = 0.6*window_width
+            newHeight = newWidth/img_asp
 
         # always resize from original
-        resized_image = self.original_image.resize((int(newWidth), int(newHeight)), Image.LANCZOS)
-        self.photo = customtkinter.CTkImage(resized_image, size=(newWidth, newHeight))
+        self.photo = customtkinter.CTkImage(light_image=self.original_image, size=(newWidth, newHeight))
+
         # resized_image = self.original_image.resize((int(bbox[2] - bbox[0]), int(bbox[3] - bbox[1])), Image.LANCZOS)
         # self.photo = customtkinter.CTkImage(resized_image, size=(bbox[2] - bbox[0], bbox[3] - bbox[1]))
         self.img_label.configure(image=self.photo)
         self.img_label.image = self.photo
-
-    # def update_image(self, event=None):
-    #     bbox = self.grid_bbox(column=0, row=0)
-    #     img_w, img_h = self.original_image.size
-
-    #     imgAspectRatio = img_w / img_h
-    #     gridAspectRatio = (bbox[2] - bbox[0]) / (bbox[3] - bbox[1])
-    #     if gridAspectRatio > imgAspectRatio:
-    #         newHeight = bbox[3]
-    #         newWidth = newHeight * imgAspectRatio
-    #     else:
-    #         newWidth = bbox[2]
-    #         newHeight = newWidth / imgAspectRatio
-
-    #     # always resize from original
-    #     resized_image = self.original_image.resize((int(newWidth), int(newHeight)), Image.LANCZOS)
-    #     self.photo = customtkinter.CTkImage(resized_image, size=(newWidth, newHeight))
-    #     # resized_image = self.original_image.resize((int(bbox[2] - bbox[0]), int(bbox[3] - bbox[1])), Image.LANCZOS)
-    #     # self.photo = customtkinter.CTkImage(resized_image, size=(bbox[2] - bbox[0], bbox[3] - bbox[1]))
-    #     self.img_label.configure(image=self.photo)
-    #     self.img_label.image = self.photo
 
     def get_new_image(self):
         file_path = self.imageHandler.getImage()
