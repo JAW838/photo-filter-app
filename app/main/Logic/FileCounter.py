@@ -12,12 +12,13 @@ class AsyncFileCounter:
     def _count_files_sync(self):
         total = 0
         completed = 0
+        savePath = self.directory + "\\" + saveFile
+        discardPath = self.directory + "\\" + discardFile
         for root, _, files in os.walk(self.directory):
-            print(root)
             for file in files:
                 location = file.rfind('.')
                 if file[location:] in self.extensions:
-                    if saveFile in root or discardFile in root:
+                    if root == savePath or root == discardPath:
                         completed += 1
                     total += 1
         return completed, total

@@ -5,6 +5,8 @@ import asyncio
 import threading
 from app.main.Logic.FileCounter import AsyncFileCounter
 from app.main.Logic.ImageHandler import extensions
+import json
+from app.main.FileNames import CONFIG_PATH
 
 FONT_SIZE = 25
 
@@ -33,14 +35,18 @@ class PhotoSorterApp(customtkinter.CTk):
         self.img_label = customtkinter.CTkLabel(self, text="")
         self.img_label.grid(row=0, column=0, sticky="nsew")
 
-        self.start_file_count()
-        self.completed = -1
-        self.total = 1
+        self.reset_progress()
+
         # Get an image
         self.get_new_image()
         self.resize_after_id = None
         self.bind("<Configure>", self.on_configure)
         self.after(100, self.update_image)
+
+    def reset_progress(self):
+        self.start_file_count()
+        self.completed = -1
+        self.total = 1
 
     def on_configure(self, event):
         if self.resize_after_id:
@@ -102,12 +108,30 @@ class PhotoSorterApp(customtkinter.CTk):
         self.img_label.image = self.photo
 
     def get_new_image(self):
+        self.completed += 1
+        self.update_progress()
         file_path = self.imageHandler.getImage()
         if file_path:
             self.image_path = file_path
             self.original_image = Image.open(file_path)
-            self.completed += 1
-            self.update_progress()
+        else:
+            self.completed_sort()
+
+    def completed_sort(self):
+        prev_filePath = self.imageHandler.filePath
+        
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
+            self.toplevel_window = CompleteDialog()
+            self.toplevel_window.attributes('-topmost', True)
+            self.toplevel_window.after(100, lambda: self.toplevel_window.attributes('-topmost', False))
+            self.wait_window(self.toplevel_window)
+
+        self.imageHandler.update_filepath()
+        if (prev_filePath == self.imageHandler.filePath):
+            self.destroy()
+        self.get_new_image()
+        self.update_image()
+        self.reset_progress()
     
     def update_progress(self):
         self.progress_bar.set(self.completed/self.total)
@@ -139,7 +163,6 @@ class PhotoSorterApp(customtkinter.CTk):
         threading.Thread(target=run_counter).start()
 
     async def count_files_async(self):
-        print(self.imageHandler.filePath)
         counter = AsyncFileCounter(self.imageHandler.filePath, extensions)
         completed, total = await counter.count_files()
 
@@ -175,3 +198,33 @@ class DeleteConfirmation(customtkinter.CTkToplevel):
         self.parent.get_new_image()
         self.parent.update_image()
         self.destroy()
+
+class CompleteDialog(customtkinter.CTkToplevel):
+    def __init__(self):
+        super().__init__()
+        self.title("Sorting Complete")
+        self.geometry("300x150")
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure((0, 1), weight=1)
+
+        self.text = "Congratulations, you have finished sorting your pictures! Please select a new folder to sort or click exit to quit."
+
+        self.textLabel = CTkLabel(master=self, text=self.text, wraplength=300)
+        self.textLabel.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+
+        self.buttonFrame = CTkFrame(master=self)
+        self.buttonFrame.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
+        self.buttonFrame.grid_columnconfigure((0, 1), weight=1)
+
+        self.exitButton = CTkButton(master=self.buttonFrame, text="Exit", fg_color="blue4", hover_color="blue", command=self.quit)
+        self.exitButton.grid(row=0, column=0)
+
+        self.fileButton = CTkButton(master=self.buttonFrame, text="Select folder", fg_color="blue4", hover_color="blue", command=self.selectFile)
+        self.fileButton.grid(row=0, column=1)
+
+    def selectFile(self):
+        folder_path = filedialog.askdirectory()
+        if folder_path:
+            with open(CONFIG_PATH, 'w') as f:
+                json.dump({"path": folder_path}, f)
+            self.destroy()  # close the window when done
