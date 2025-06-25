@@ -13,6 +13,7 @@ def main():
     if CURR_TYPE == ProjType.PROD:
         
         folder_locator = None
+        print(CONFIG_PATH)
 
         # Check if config exists and is valid
         if os.path.exists(CONFIG_PATH):

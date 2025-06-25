@@ -3,6 +3,7 @@ import customtkinter
 import json
 import os
 from tkinter import filedialog
+from app.main.FileNames import CONFIG_PATH
 
 class FileSelectDialog(customtkinter.CTk):
     def __init__(self):
@@ -12,7 +13,7 @@ class FileSelectDialog(customtkinter.CTk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure((0, 1), weight=1)
 
-        self.config_path = os.getcwd() + '\\app\\main\\config.json'
+        self.config_path = CONFIG_PATH
         self.text = "Please select a folder to sort."
 
         # Try to load config
@@ -44,6 +45,7 @@ class FileSelectDialog(customtkinter.CTk):
 
     def selectFile(self):
         folder_path = filedialog.askdirectory()
+        print(folder_path)
         if folder_path:
             with open(self.config_path, 'w') as f:
                 json.dump({"path": folder_path}, f)
