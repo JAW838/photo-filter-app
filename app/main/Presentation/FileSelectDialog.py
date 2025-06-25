@@ -7,7 +7,7 @@ from tkinter import filedialog
 class FileSelectDialog(customtkinter.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Select a Location to Start")
+        self.title("Photo Sort")
         self.geometry("300x100")
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure((0, 1), weight=1)

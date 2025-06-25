@@ -16,7 +16,7 @@ class ImageHandler:
 
         # Set the filePath based on the project type
         if self.type == ProjType.TEST:
-            self.filePath = os.getcwd() + "\\app\\test\\test-images"
+            self.filePath = os.getcwd() + "\\app\\test"
         elif self.type == ProjType.PROD:
             self.update_filepath()
         elif self.type == ProjType.PROD and not self.filePath:
@@ -26,6 +26,7 @@ class ImageHandler:
         self.filePath = self.__get_filepath__()
 
     def __get_filepath__(self):
+        # folder_locator = None
         if os.path.exists(CONFIG_PATH):
             try:
                 with open(CONFIG_PATH, 'r') as f:

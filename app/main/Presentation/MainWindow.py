@@ -108,8 +108,6 @@ class PhotoSorterApp(customtkinter.CTk):
         self.img_label.image = self.photo
 
     def get_new_image(self):
-        self.completed += 1
-        self.update_progress()
         file_path = self.imageHandler.getImage()
         if file_path:
             self.image_path = file_path
@@ -121,28 +119,40 @@ class PhotoSorterApp(customtkinter.CTk):
         prev_filePath = self.imageHandler.filePath
         
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
-            self.toplevel_window = CompleteDialog()
-            self.toplevel_window.attributes('-topmost', True)
-            self.toplevel_window.after(100, lambda: self.toplevel_window.attributes('-topmost', False))
-            self.wait_window(self.toplevel_window)
+            self.open_window()
+        else:
+            self.toplevel_window.destroy()
+            self.open_window()
 
         self.imageHandler.update_filepath()
-        if (prev_filePath == self.imageHandler.filePath):
-            self.destroy()
+        # if (prev_filePath == self.imageHandler.filePath):
+        #     self.destroy()
         self.get_new_image()
         self.update_image()
         self.reset_progress()
+
+    def open_window(self):
+            self.toplevel_window = CompleteDialog(self)
+            self.toplevel_window.attributes('-topmost', True)
+            self.toplevel_window.after(100, lambda: self.toplevel_window.attributes('-topmost', False))
+            self.wait_window(self.toplevel_window)
     
     def update_progress(self):
+        self.total = self.total if self.total > 0 else 1
+        self.completed = self.completed if self.completed > -1 else 0
         self.progress_bar.set(self.completed/self.total)
         self.progress_stat.configure(text=f"{self.completed}/{self.total} ({int(self.completed/self.total*100)}%)")
 
     def keep_photo(self):
+        self.completed += 1
+        self.update_progress()
         self.imageHandler.saveImage(self.image_path)
         self.get_new_image()
         self.update_image()
 
     def discard_photo(self):
+        self.completed += 1
+        self.update_progress()
         self.imageHandler.discardImage(self.image_path)
         self.get_new_image()
         self.update_image()
@@ -194,14 +204,17 @@ class DeleteConfirmation(customtkinter.CTkToplevel):
         self.cancel_button.grid(row=1, column=0, padx=20)
 
     def delete_image(self):
+        self.parent.total -= 1
+        self.parent.update_progress()
         self.imageHandler.deleteImage(self.imagePath)
         self.parent.get_new_image()
         self.parent.update_image()
         self.destroy()
 
 class CompleteDialog(customtkinter.CTkToplevel):
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__()
+        self.parent = parent
         self.title("Sorting Complete")
         self.geometry("300x150")
         self.grid_columnconfigure(0, weight=1)
@@ -216,7 +229,7 @@ class CompleteDialog(customtkinter.CTkToplevel):
         self.buttonFrame.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         self.buttonFrame.grid_columnconfigure((0, 1), weight=1)
 
-        self.exitButton = CTkButton(master=self.buttonFrame, text="Exit", fg_color="blue4", hover_color="blue", command=self.quit)
+        self.exitButton = CTkButton(master=self.buttonFrame, text="Exit", fg_color="blue4", hover_color="blue", command=self.exit)
         self.exitButton.grid(row=0, column=0)
 
         self.fileButton = CTkButton(master=self.buttonFrame, text="Select folder", fg_color="blue4", hover_color="blue", command=self.selectFile)
@@ -228,3 +241,8 @@ class CompleteDialog(customtkinter.CTkToplevel):
             with open(CONFIG_PATH, 'w') as f:
                 json.dump({"path": folder_path}, f)
             self.destroy()  # close the window when done
+
+    def exit(self):
+        if (os.path.exists(CONFIG_PATH)):
+            os.remove(CONFIG_PATH)
+        self.parent.destroy()

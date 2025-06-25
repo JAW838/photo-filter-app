@@ -2,7 +2,6 @@ from app.main.Presentation.MainWindow import PhotoSorterApp
 from customtkinter import *
 from app.main.Logic.ImageHandler import ImageHandler
 from app.main.Presentation.ProjType import ProjType
-from tkinter import filedialog
 from app.main.Presentation.FileSelectDialog import FileSelectDialog
 from app.main.FileNames import CONFIG_PATH
 import json
@@ -43,14 +42,15 @@ def main():
             if not folder_locator:
                 print("No folder selected. Exiting.")
                 return
+    else:
+        with open(CONFIG_PATH, 'w') as f:
+            handler = ImageHandler(CURR_TYPE)
+            json.dump({"path": handler.filePath}, f)
 
     handler = ImageHandler(CURR_TYPE)
 
     app = PhotoSorterApp(handler)
     app.mainloop()
-
-def select_folder():
-    return filedialog.askdirectory()
 
 if __name__ == "__main__":
     main()
