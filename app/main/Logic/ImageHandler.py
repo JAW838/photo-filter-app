@@ -73,6 +73,11 @@ class ImageHandler:
         if not os.path.exists(targetPath):
             os.makedirs(targetPath)
         # Move the image to the target directory
-        newFileName = os.path.join(targetPath, os.path.basename(imagePath))
+        base, ext = os.path.splitext(os.path.basename(imagePath))
+        newFileName = os.path.join(targetPath, base + ext)
+        index = 1
+        while os.path.exists(newFileName):
+            newFileName = os.path.join(targetPath, f"{base}_{index}{ext}")
+            index += 1
         os.rename(imagePath, newFileName)
         return newFileName

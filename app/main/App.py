@@ -7,7 +7,7 @@ from app.main.FileNames import CONFIG_PATH
 import json
 import os
 
-CURR_TYPE = ProjType.PROD
+CURR_TYPE = ProjType.TEST
 
 def main():
     if CURR_TYPE == ProjType.PROD:
