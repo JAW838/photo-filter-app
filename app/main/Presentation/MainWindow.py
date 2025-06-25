@@ -1,6 +1,10 @@
 from customtkinter import *
 import customtkinter
 from PIL import Image
+import asyncio
+import threading
+from app.main.Logic.FileCounter import AsyncFileCounter
+from app.main.Logic.ImageHandler import extensions
 
 FONT_SIZE = 25
 
@@ -11,43 +15,61 @@ class PhotoSorterApp(customtkinter.CTk):
         self.title("Photo Sorter")
         self.geometry("800x600")
         self.grid_columnconfigure((0, 1), weight=1)
-        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure((0), weight=1)
 
         self.imageHandler = imageHandler
 
-        # Create frame for buttons
-        self.button_frame = CTkFrame(master=self)
-        self.button_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
-        self.button_frame.grid_rowconfigure((0, 1, 2, 3, 4), weight=1)
-        self.button_frame.grid_columnconfigure(0, weight=1)
+        self.right_frame = CTkFrame(master=self)
+        self.right_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+        self.right_frame.grid_rowconfigure((0, 1, 2, 3, 4), weight=1)
+        self.right_frame.grid_columnconfigure((0), weight=1)
 
-        # Create and place buttons
-        self.keep_button = CTkButton(master=self.button_frame, text="Keep", command=self.keep_photo, fg_color="blue4", hover_color="blue", font=("Arial", FONT_SIZE), border_spacing=FONT_SIZE/4)
-        self.keep_button.grid(row=1, column=0, pady=5, sticky="ew")
-
-        self.discard_button = CTkButton(master=self.button_frame, text="Discard", command=self.discard_photo, fg_color="blue4", hover_color="blue", font=("Arial", FONT_SIZE), border_spacing=FONT_SIZE/4)
-        self.discard_button.grid(row=2, column=0, pady=5, sticky="ew")
-
-        self.delete_button = CTkButton(master=self.button_frame, text="Delete", command=self.delete_photo, fg_color="darkred", hover_color="red", font=("Arial", FONT_SIZE), border_spacing=FONT_SIZE/4)
-        self.delete_button.grid(row=3, column=0, pady=5, sticky="ew")
+        self.add_buttons(self.right_frame, (0,1,2))
+        self.add_progress(self.right_frame, 3)
 
         self.toplevel_window = None
 
         # Create image label
         self.img_label = customtkinter.CTkLabel(self, text="")
-        self.img_label.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        self.img_label.grid(row=0, column=0, sticky="nsew")
 
+        self.start_file_count()
+        self.completed = -1
+        self.total = 1
         # Get an image
         self.get_new_image()
         self.resize_after_id = None
         self.bind("<Configure>", self.on_configure)
-
         self.after(100, self.update_image)
 
     def on_configure(self, event):
         if self.resize_after_id:
             self.after_cancel(self.resize_after_id)
         self.resize_after_id = self.after(100, self.update_image)
+
+    def add_buttons(self, master, locations):
+        # Create and place buttons
+        self.keep_button = CTkButton(master=master, text="Keep", command=self.keep_photo, fg_color="blue4", hover_color="blue", font=("Arial", FONT_SIZE), border_spacing=FONT_SIZE/4)
+        self.keep_button.grid(row=locations[0], column=0, pady=5, sticky="ew")
+
+        self.discard_button = CTkButton(master=master, text="Discard", command=self.discard_photo, fg_color="blue4", hover_color="blue", font=("Arial", FONT_SIZE), border_spacing=FONT_SIZE/4)
+        self.discard_button.grid(row=locations[1], column=0, pady=5, sticky="ew")
+
+        self.delete_button = CTkButton(master=master, text="Delete", command=self.delete_photo, fg_color="darkred", hover_color="red", font=("Arial", FONT_SIZE), border_spacing=FONT_SIZE/4)
+        self.delete_button.grid(row=locations[2], column=0, pady=5, sticky="ew")
+
+    def add_progress(self, master, location):
+        self.bar_frame = CTkFrame(master=master)
+        self.bar_frame.grid(row=location, column=0, sticky="nsew")
+        self.bar_frame.grid_columnconfigure((0), weight=1)
+        self.bar_frame.grid_rowconfigure((0,1), weight=1)
+
+        self.progress_bar = CTkProgressBar(master=self.bar_frame)
+        self.progress_bar.grid(row=0, column=0)
+        self.progress_bar.set(0)
+
+        self.progress_stat = CTkLabel(master=self.bar_frame, text="Loading progess...")
+        self.progress_stat.grid(row=1, column=0)
 
     def open_image(self):
         self.get_new_image()
@@ -84,6 +106,12 @@ class PhotoSorterApp(customtkinter.CTk):
         if file_path:
             self.image_path = file_path
             self.original_image = Image.open(file_path)
+            self.completed += 1
+            self.update_progress()
+    
+    def update_progress(self):
+        self.progress_bar.set(self.completed/self.total)
+        self.progress_stat.configure(text=f"{self.completed}/{self.total} ({int(self.completed/self.total*100)}%)")
 
     def keep_photo(self):
         self.imageHandler.saveImage(self.image_path)
@@ -104,6 +132,25 @@ class PhotoSorterApp(customtkinter.CTk):
         else: 
             self.toplevel_window.focus()  # if window exists focus it
 
+    def start_file_count(self):
+        def run_counter():
+            asyncio.run(self.count_files_async())
+
+        threading.Thread(target=run_counter).start()
+
+    async def count_files_async(self):
+        print(self.imageHandler.filePath)
+        counter = AsyncFileCounter(self.imageHandler.filePath, extensions)
+        completed, total = await counter.count_files()
+
+        # Once count is ready, update GUI safely from main thread:
+        self.after(0, lambda: self.show_file_count(completed, total))
+
+    def show_file_count(self, completed, total):
+        self.completed = completed
+        self.total = total
+        self.update_progress()
+
 class DeleteConfirmation(customtkinter.CTkToplevel):
     def __init__(self, parent, imageHandler, imagePath):
         super().__init__()
@@ -118,10 +165,10 @@ class DeleteConfirmation(customtkinter.CTkToplevel):
         self.label.grid(row=0, column=0, columnspan=2, pady=10)
 
         self.confirm_button = CTkButton(self, text="Delete", command=self.delete_image)
-        self.confirm_button.grid(row=1, column=0, padx=20)
+        self.confirm_button.grid(row=1, column=1, padx=20)
 
         self.cancel_button = CTkButton(self, text="Cancel", command=self.destroy)
-        self.cancel_button.grid(row=1, column=1, padx=20)
+        self.cancel_button.grid(row=1, column=0, padx=20)
 
     def delete_image(self):
         self.imageHandler.deleteImage(self.imagePath)

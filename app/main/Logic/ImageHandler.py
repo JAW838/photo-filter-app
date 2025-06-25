@@ -27,9 +27,6 @@ class ImageHandler:
             path = self.filePath
         for root, dirs, files in os.walk(path):
             dirs[:] = [d for d in dirs if d not in [saveFile, discardFile]]
-            print("Directory path: %s"%root)
-            print("Directory Names: %s"%dirs)
-            print("Files Names: %s"%files)
             for filename in files:
                 if filename.lower().endswith(extensions):
                     return os.path.join(root, filename)
