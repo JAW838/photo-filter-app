@@ -116,8 +116,6 @@ class PhotoSorterApp(customtkinter.CTk):
             self.completed_sort()
 
     def completed_sort(self):
-        prev_filePath = self.imageHandler.filePath
-        
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.open_window()
         else:
@@ -125,8 +123,6 @@ class PhotoSorterApp(customtkinter.CTk):
             self.open_window()
 
         self.imageHandler.update_filepath()
-        # if (prev_filePath == self.imageHandler.filePath):
-        #     self.destroy()
         self.get_new_image()
         self.update_image()
         self.reset_progress()
