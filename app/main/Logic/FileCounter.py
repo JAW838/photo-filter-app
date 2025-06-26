@@ -17,7 +17,7 @@ class AsyncFileCounter:
         for root, _, files in os.walk(self.directory):
             for file in files:
                 location = file.rfind('.')
-                if file[location:] in self.extensions:
+                if file[location:].lower() in self.extensions:
                     if root == savePath or root == discardPath:
                         completed += 1
                     total += 1
